@@ -222,3 +222,77 @@ export function useSaveEntries() {
     },
   });
 }
+
+// ── Sale Category hooks ───────────────────────────────────
+
+export function useSaleCategoriesWithPrice() {
+  const { actor, isFetching } = useActor();
+  return useQuery<CategoryItem[]>({
+    queryKey: ["saleCategoriesWithPrice"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getSaleCategoriesWithPrice();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAddSaleCategoryWithPrice() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      defaultPrice,
+    }: {
+      name: string;
+      defaultPrice: number;
+    }) => {
+      if (!actor) throw new Error("No actor available");
+      return actor.addSaleCategoryWithPrice(name, defaultPrice);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["saleCategoriesWithPrice"],
+      });
+    },
+  });
+}
+
+export function useUpdateSaleCategoryPrice() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      newPrice,
+    }: {
+      name: string;
+      newPrice: number;
+    }) => {
+      if (!actor) throw new Error("No actor available");
+      return actor.updateSaleCategoryPrice(name, newPrice);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["saleCategoriesWithPrice"],
+      });
+    },
+  });
+}
+
+export function useDeleteSaleCategoryWithPrice() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      if (!actor) throw new Error("No actor available");
+      return actor.deleteSaleCategoryWithPrice(name);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["saleCategoriesWithPrice"],
+      });
+    },
+  });
+}

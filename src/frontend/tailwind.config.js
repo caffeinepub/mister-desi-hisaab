@@ -17,7 +17,7 @@ export default {
     extend: {
       fontFamily: {
         display: ["Fraunces", "serif"],
-        sans: ["Plus Jakarta Sans", "sans-serif"],
+        sans: ["Bricolage Grotesque", "sans-serif"],
         mono: ["Geist Mono", "monospace"],
       },
       colors: {

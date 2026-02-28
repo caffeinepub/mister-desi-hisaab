@@ -18,15 +18,15 @@ export default function App() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header
-        className="sticky top-0 z-40 shadow-md"
-        style={{ background: "oklch(0.18 0.06 50)" }}
+        className="sticky top-0 z-40 shadow-lg"
+        style={{ background: "oklch(0.08 0.025 25)" }}
       >
-        {/* Decorative top stripe — saffron + turmeric rhythm */}
+        {/* Decorative top stripe — deep red rhythm */}
         <div
           className="h-1.5 w-full"
           style={{
             background:
-              "repeating-linear-gradient(90deg, oklch(0.62 0.18 52) 0px, oklch(0.62 0.18 52) 18px, oklch(0.72 0.16 75) 18px, oklch(0.72 0.16 75) 24px)",
+              "repeating-linear-gradient(90deg, oklch(0.42 0.22 25) 0px, oklch(0.42 0.22 25) 20px, oklch(0.28 0.12 25) 20px, oklch(0.28 0.12 25) 26px, oklch(0.55 0.18 25) 26px, oklch(0.55 0.18 25) 30px)",
           }}
         />
 
@@ -36,29 +36,33 @@ export default function App() {
             <button
               type="button"
               onClick={() => setActiveTab("daily")}
-              className="w-11 h-11 rounded-xl overflow-hidden shrink-0 border-2 ring-2 ring-white/10 transition-transform active:scale-95 hover:scale-105"
-              style={{ borderColor: "oklch(0.72 0.16 75 / 0.4)" }}
+              className="w-12 h-12 rounded-xl overflow-hidden shrink-0 transition-transform active:scale-95 hover:scale-105"
+              style={{
+                background: "oklch(0.05 0.01 25)",
+                border: "2px solid oklch(0.42 0.22 25 / 0.5)",
+                boxShadow: "0 0 12px oklch(0.42 0.22 25 / 0.25)",
+              }}
               title="Home — Daily Entry"
               aria-label="Go to Home (Daily Entry)"
             >
               <img
-                src="/assets/generated/mdh-logo-transparent.dim_80x80.png"
-                alt="MDH Logo"
-                className="w-full h-full object-cover"
+                src="/assets/uploads/Mister-Desi-Final-1.png"
+                alt="Mister Desi Logo"
+                className="w-full h-full object-contain"
               />
             </button>
 
             {/* App Title */}
             <div className="flex-1 min-w-0">
               <h1
-                className="font-display text-2xl font-bold leading-tight tracking-tight"
-                style={{ color: "oklch(0.97 0.025 65)" }}
+                className="font-display text-xl font-bold leading-tight tracking-tight"
+                style={{ color: "oklch(0.96 0.018 72)" }}
               >
                 Mister Desi Hisaab
               </h1>
               <p
                 className="text-xs font-medium tracking-wide"
-                style={{ color: "oklch(0.72 0.06 60)" }}
+                style={{ color: "oklch(0.55 0.06 40)" }}
               >
                 मिस्टर देसी हिसाब &nbsp;·&nbsp; Daily Business Tracker
               </p>
@@ -76,9 +80,9 @@ export default function App() {
                   onClick={() => setActiveTab("daily")}
                   className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
                   style={{
-                    background: "oklch(0.62 0.18 52 / 0.18)",
-                    color: "oklch(0.82 0.16 65)",
-                    border: "1.5px solid oklch(0.62 0.18 52 / 0.4)",
+                    background: "oklch(0.42 0.22 25 / 0.20)",
+                    color: "oklch(0.80 0.14 25)",
+                    border: "1.5px solid oklch(0.42 0.22 25 / 0.45)",
                   }}
                   title="वापस Home पर जाएं"
                   aria-label="Go to Home"
@@ -92,13 +96,12 @@ export default function App() {
             <TodayBadge />
           </div>
 
-          {/* Navigation — Entry | Summary | Import */}
+          {/* Navigation — Entry | Summary | Items | Import */}
           <nav
             className="flex rounded-xl p-1 gap-1"
             role="tablist"
-            style={{ background: "oklch(0.13 0.05 50)" }}
+            style={{ background: "oklch(0.07 0.020 25)" }}
           >
-            {/* Entry group — Daily */}
             <NavTab
               active={activeTab === "daily"}
               onClick={() => setActiveTab("daily")}
@@ -106,7 +109,6 @@ export default function App() {
               sublabel="आज का"
               emoji="✏️"
             />
-            {/* Summary */}
             <NavTab
               active={activeTab === "summary"}
               onClick={() => setActiveTab("summary")}
@@ -114,7 +116,6 @@ export default function App() {
               sublabel="रिपोर्ट"
               emoji="📊"
             />
-            {/* Items */}
             <NavTab
               active={activeTab === "items"}
               onClick={() => setActiveTab("items")}
@@ -122,7 +123,6 @@ export default function App() {
               sublabel="आइटम"
               emoji="📦"
             />
-            {/* Import */}
             <NavTab
               active={activeTab === "bulk"}
               onClick={() => setActiveTab("bulk")}
@@ -182,18 +182,25 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-4 mt-8">
+      <footer
+        className="border-t py-4 mt-8"
+        style={{
+          borderColor: "oklch(0.80 0.025 60)",
+          background: "oklch(0.97 0.012 72)",
+        }}
+      >
         <div className="max-w-2xl mx-auto px-4 text-center">
           <p className="text-xs text-muted-foreground">
-            © {currentYear}. Built with <span className="text-primary">♥</span>{" "}
-            using{" "}
+            © {currentYear}. Built with{" "}
+            <span style={{ color: "oklch(0.42 0.22 25)" }}>♥</span> using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
                 typeof window !== "undefined" ? window.location.hostname : "",
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline font-medium"
+              className="hover:underline font-medium"
+              style={{ color: "oklch(0.42 0.22 25)" }}
             >
               caffeine.ai
             </a>
@@ -216,17 +223,17 @@ function TodayBadge() {
   return (
     <div
       className="text-right shrink-0 px-2.5 py-1.5 rounded-lg"
-      style={{ background: "oklch(0.13 0.05 50)" }}
+      style={{ background: "oklch(0.13 0.040 25)" }}
     >
       <p
         className="text-xs font-medium"
-        style={{ color: "oklch(0.65 0.06 60)" }}
+        style={{ color: "oklch(0.52 0.06 40)" }}
       >
         {day}
       </p>
       <p
         className="text-sm font-bold font-mono-nums"
-        style={{ color: "oklch(0.78 0.18 65)" }}
+        style={{ color: "oklch(0.72 0.18 25)" }}
       >
         {date}
       </p>
@@ -259,11 +266,11 @@ function NavTab({
       style={
         active
           ? {
-              background: "oklch(0.62 0.18 52)",
-              color: "oklch(0.99 0 0)",
+              background: "oklch(0.42 0.22 25)",
+              color: "oklch(0.97 0.015 72)",
             }
           : {
-              color: "oklch(0.65 0.06 60)",
+              color: "oklch(0.50 0.05 35)",
             }
       }
     >
@@ -271,7 +278,7 @@ function NavTab({
       <span className="text-xs font-bold leading-tight">{label}</span>
       <span
         className="text-[10px] leading-none font-normal opacity-75"
-        style={active ? { color: "oklch(0.95 0.02 60)" } : {}}
+        style={active ? { color: "oklch(0.92 0.018 72)" } : {}}
       >
         {sublabel}
       </span>

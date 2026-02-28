@@ -12,8 +12,8 @@
 }
 
 @font-face {
-  font-family: "Plus Jakarta Sans";
-  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque.woff2") format("woff2");
   font-weight: 200 800;
   font-style: normal;
   font-display: swap;
@@ -27,65 +27,65 @@
   font-display: swap;
 }
 
-/* ── Design Tokens ─────────────────────────────────────── */
+/* ── Design Tokens — Mister Desi: Black + Deep Red + Cream ─ */
 @layer base {
   :root {
     --radius: 0.5rem;
 
-    /* Indian Saffron / Turmeric palette — warm, trustworthy */
-    --background: 0.97 0.012 65;
-    --foreground: 0.18 0.04 50;
+    /* Cream/Off-white light surface */
+    --background: 0.96 0.018 72;
+    --foreground: 0.12 0.03 25;
 
-    --card: 0.99 0.006 60;
-    --card-foreground: 0.18 0.04 50;
+    --card: 0.98 0.010 70;
+    --card-foreground: 0.12 0.03 25;
 
-    --popover: 0.99 0.006 60;
-    --popover-foreground: 0.18 0.04 50;
+    --popover: 0.98 0.010 70;
+    --popover-foreground: 0.12 0.03 25;
 
-    /* Saffron primary */
-    --primary: 0.62 0.18 52;
-    --primary-foreground: 0.99 0 0;
+    /* Deep Red primary — Mister Desi brand red */
+    --primary: 0.42 0.22 25;
+    --primary-foreground: 0.97 0.015 72;
 
-    /* Warm secondary */
-    --secondary: 0.92 0.035 65;
-    --secondary-foreground: 0.25 0.06 50;
+    /* Dark secondary */
+    --secondary: 0.14 0.025 25;
+    --secondary-foreground: 0.92 0.020 72;
 
-    --muted: 0.92 0.02 65;
-    --muted-foreground: 0.52 0.04 55;
+    --muted: 0.91 0.018 70;
+    --muted-foreground: 0.48 0.05 40;
 
-    /* Turmeric accent */
-    --accent: 0.88 0.12 75;
-    --accent-foreground: 0.18 0.06 45;
+    /* Cream accent */
+    --accent: 0.93 0.030 72;
+    --accent-foreground: 0.20 0.04 25;
 
-    --destructive: 0.58 0.22 27;
+    --destructive: 0.52 0.22 27;
     --destructive-foreground: 0.99 0 0;
 
-    --border: 0.86 0.04 65;
-    --input: 0.86 0.04 65;
-    --ring: 0.62 0.18 52;
+    --border: 0.85 0.025 60;
+    --input: 0.85 0.025 60;
+    --ring: 0.42 0.22 25;
 
     /* Profit/Loss colors */
-    --profit: 0.58 0.18 145;
-    --profit-bg: 0.95 0.06 145;
-    --loss: 0.52 0.22 27;
-    --loss-bg: 0.97 0.05 27;
+    --profit: 0.52 0.18 145;
+    --profit-bg: 0.94 0.06 145;
+    --loss: 0.46 0.20 27;
+    --loss-bg: 0.96 0.04 27;
 
     /* Chart colors */
-    --chart-1: 0.62 0.18 52;
-    --chart-2: 0.55 0.16 145;
-    --chart-3: 0.52 0.22 27;
-    --chart-4: 0.65 0.14 230;
-    --chart-5: 0.7 0.16 80;
+    --chart-1: 0.42 0.22 25;
+    --chart-2: 0.52 0.18 145;
+    --chart-3: 0.46 0.20 27;
+    --chart-4: 0.55 0.16 230;
+    --chart-5: 0.62 0.14 72;
 
     /* Sidebar */
-    --sidebar: 0.18 0.06 50;
-    --sidebar-foreground: 0.92 0.02 65;
-    --sidebar-primary: 0.62 0.18 52;
-    --sidebar-primary-foreground: 0.99 0 0;
-    --sidebar-accent: 0.28 0.08 50;
-    --sidebar-accent-foreground: 0.92 0.02 65;
-    --sidebar-border: 0.3 0.06 50;
-    --sidebar-ring: 0.62 0.18 52;
+    --sidebar: 0.10 0.030 25;
+    --sidebar-foreground: 0.92 0.020 72;
+    --sidebar-primary: 0.42 0.22 25;
+    --sidebar-primary-foreground: 0.97 0.015 72;
+    --sidebar-accent: 0.20 0.05 25;
+    --sidebar-accent-foreground: 0.92 0.020 72;
+    --sidebar-border: 0.22 0.04 25;
+    --sidebar-ring: 0.42 0.22 25;
   }
 
   * {
@@ -94,8 +94,8 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Plus Jakarta Sans", sans-serif;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-feature-settings: "ss01", "ss02";
   }
 }
 
@@ -103,6 +103,9 @@
 @layer utilities {
   .font-display {
     font-family: "Fraunces", serif;
+  }
+  .font-ui {
+    font-family: "Bricolage Grotesque", sans-serif;
   }
   .font-mono-nums {
     font-family: "Geist Mono", monospace;
@@ -127,15 +130,26 @@
     background-color: oklch(var(--muted) / 0.5);
   }
 
-  /* Decorative Indian border pattern */
+  /* Decorative Mister Desi red border pattern */
   .border-decorative {
     border-image: repeating-linear-gradient(
         90deg,
-        oklch(var(--primary)) 0px,
-        oklch(var(--primary)) 6px,
-        oklch(var(--accent)) 6px,
-        oklch(var(--accent)) 10px
+        oklch(0.42 0.22 25) 0px,
+        oklch(0.42 0.22 25) 8px,
+        oklch(0.28 0.12 25) 8px,
+        oklch(0.28 0.12 25) 12px
       )
       1;
+  }
+
+  /* Dark panel — used in header, nav, dark cards */
+  .panel-dark {
+    background-color: oklch(0.10 0.030 25);
+  }
+  .panel-dark-2 {
+    background-color: oklch(0.13 0.035 25);
+  }
+  .panel-red {
+    background-color: oklch(0.18 0.06 25);
   }
 }

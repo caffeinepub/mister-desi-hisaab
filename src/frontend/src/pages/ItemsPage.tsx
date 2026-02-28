@@ -17,12 +17,16 @@ import type { CategoryItem } from "../backend.d.ts";
 import {
   useAddExpenseCategoryWithPrice,
   useAddPurchaseCategoryWithPrice,
+  useAddSaleCategoryWithPrice,
   useDeleteExpenseCategoryWithPrice,
   useDeletePurchaseCategoryWithPrice,
+  useDeleteSaleCategoryWithPrice,
   useExpenseCategoriesWithPrice,
   usePurchaseCategoriesWithPrice,
+  useSaleCategoriesWithPrice,
   useUpdateExpenseCategoryPrice,
   useUpdatePurchaseCategoryPrice,
+  useUpdateSaleCategoryPrice,
 } from "../hooks/useQueries";
 
 // ── Inline price editor ──────────────────────────────────
@@ -34,7 +38,7 @@ function PriceEditor({
 }: {
   item: CategoryItem;
   onSave: (newPrice: number) => Promise<void>;
-  color: "saffron" | "rose";
+  color: "saffron" | "rose" | "green";
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(item.defaultPrice || ""));
@@ -60,7 +64,11 @@ function PriceEditor({
   };
 
   const accentColor =
-    color === "saffron" ? "oklch(0.62 0.18 52)" : "oklch(0.55 0.22 27)";
+    color === "saffron"
+      ? "oklch(0.62 0.18 52)"
+      : color === "rose"
+        ? "oklch(0.55 0.22 27)"
+        : "oklch(0.48 0.18 145)";
 
   if (editing) {
     return (
@@ -133,7 +141,7 @@ function ItemRow({
   onDelete,
 }: {
   item: CategoryItem;
-  color: "saffron" | "rose";
+  color: "saffron" | "rose" | "green";
   onUpdatePrice: (newPrice: number) => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
@@ -232,7 +240,7 @@ function AddItemForm({
   onAdd,
   onCancel,
 }: {
-  color: "saffron" | "rose";
+  color: "saffron" | "rose" | "green";
   onAdd: (name: string, defaultPrice: number) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -241,11 +249,17 @@ function AddItemForm({
   const [saving, setSaving] = useState(false);
 
   const accentColor =
-    color === "saffron" ? "oklch(0.62 0.18 52)" : "oklch(0.55 0.22 27)";
+    color === "saffron"
+      ? "oklch(0.62 0.18 52)"
+      : color === "rose"
+        ? "oklch(0.55 0.22 27)"
+        : "oklch(0.48 0.18 145)";
   const bgColor =
     color === "saffron"
       ? "oklch(0.20 0.06 50 / 0.4)"
-      : "oklch(0.18 0.06 27 / 0.4)";
+      : color === "rose"
+        ? "oklch(0.18 0.06 27 / 0.4)"
+        : "oklch(0.18 0.06 145 / 0.4)";
 
   const handleSubmit = async () => {
     const trimmed = name.trim();
@@ -377,7 +391,7 @@ function ItemSection({
   emoji: string;
   items: CategoryItem[];
   isLoading: boolean;
-  color: "saffron" | "rose";
+  color: "saffron" | "rose" | "green";
   onAdd: (name: string, defaultPrice: number) => Promise<void>;
   onUpdatePrice: (name: string, newPrice: number) => Promise<void>;
   onDelete: (name: string) => Promise<void>;
@@ -385,13 +399,23 @@ function ItemSection({
   const [showAddForm, setShowAddForm] = useState(false);
 
   const accentColor =
-    color === "saffron" ? "oklch(0.62 0.18 52)" : "oklch(0.55 0.22 27)";
+    color === "saffron"
+      ? "oklch(0.62 0.18 52)"
+      : color === "rose"
+        ? "oklch(0.55 0.22 27)"
+        : "oklch(0.48 0.18 145)";
   const headerBg =
     color === "saffron"
       ? "oklch(0.20 0.07 55 / 0.6)"
-      : "oklch(0.18 0.06 27 / 0.6)";
+      : color === "rose"
+        ? "oklch(0.18 0.06 27 / 0.6)"
+        : "oklch(0.18 0.07 145 / 0.5)";
   const borderColor =
-    color === "saffron" ? "oklch(0.35 0.10 55)" : "oklch(0.32 0.10 27)";
+    color === "saffron"
+      ? "oklch(0.35 0.10 55)"
+      : color === "rose"
+        ? "oklch(0.32 0.10 27)"
+        : "oklch(0.35 0.12 145)";
 
   return (
     <div className="rounded-xl border overflow-hidden" style={{ borderColor }}>
@@ -510,13 +534,18 @@ export function ItemsPage() {
     usePurchaseCategoriesWithPrice();
   const { data: expenseItems = [], isLoading: expenseLoading } =
     useExpenseCategoriesWithPrice();
+  const { data: saleItems = [], isLoading: saleLoading } =
+    useSaleCategoriesWithPrice();
 
   const addPurchaseItem = useAddPurchaseCategoryWithPrice();
   const addExpenseItem = useAddExpenseCategoryWithPrice();
+  const addSaleItem = useAddSaleCategoryWithPrice();
   const updatePurchasePrice = useUpdatePurchaseCategoryPrice();
   const updateExpensePrice = useUpdateExpenseCategoryPrice();
+  const updateSalePrice = useUpdateSaleCategoryPrice();
   const deletePurchaseItem = useDeletePurchaseCategoryWithPrice();
   const deleteExpenseItem = useDeleteExpenseCategoryWithPrice();
+  const deleteSaleItem = useDeleteSaleCategoryWithPrice();
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-5 pb-20 space-y-5">
@@ -524,30 +553,30 @@ export function ItemsPage() {
       <div
         className="rounded-2xl px-5 py-4 border"
         style={{
-          background: "oklch(0.20 0.06 50)",
-          borderColor: "oklch(0.30 0.07 50)",
+          background: "oklch(0.10 0.030 25)",
+          borderColor: "oklch(0.22 0.05 25)",
         }}
       >
         <div className="flex items-start gap-3">
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "oklch(0.28 0.08 55)" }}
+            style={{ background: "oklch(0.20 0.07 25)" }}
           >
             <Package
               className="h-5 w-5"
-              style={{ color: "oklch(0.82 0.18 65)" }}
+              style={{ color: "oklch(0.80 0.18 25)" }}
             />
           </div>
           <div>
             <h2
               className="font-display font-bold text-xl leading-tight"
-              style={{ color: "oklch(0.97 0.025 65)" }}
+              style={{ color: "oklch(0.96 0.018 72)" }}
             >
               Items Manager
             </h2>
             <p
               className="text-sm font-medium mt-0.5"
-              style={{ color: "oklch(0.72 0.08 60)" }}
+              style={{ color: "oklch(0.62 0.06 40)" }}
             >
               आइटम बनाएं, rate set करें, manage करें
             </p>
@@ -559,14 +588,14 @@ export function ItemsPage() {
       <div
         className="rounded-xl px-4 py-3 border text-sm"
         style={{
-          background: "oklch(0.16 0.04 55 / 0.5)",
-          borderColor: "oklch(0.30 0.06 55)",
-          color: "oklch(0.75 0.06 60)",
+          background: "oklch(0.14 0.04 25 / 0.5)",
+          borderColor: "oklch(0.28 0.06 25)",
+          color: "oklch(0.68 0.06 40)",
         }}
       >
         <p
           className="font-semibold text-xs uppercase tracking-wide mb-1"
-          style={{ color: "oklch(0.62 0.10 65)" }}
+          style={{ color: "oklch(0.55 0.10 35)" }}
         >
           💡 कैसे काम करता है?
         </p>
@@ -607,6 +636,22 @@ export function ItemsPage() {
           updateExpensePrice.mutateAsync({ name, newPrice })
         }
         onDelete={(name) => deleteExpenseItem.mutateAsync(name)}
+      />
+
+      {/* Sale Items */}
+      <ItemSection
+        title="Sale Items (बिक्री)"
+        emoji="🧾"
+        items={saleItems}
+        isLoading={saleLoading}
+        color="green"
+        onAdd={(name, defaultPrice) =>
+          addSaleItem.mutateAsync({ name, defaultPrice })
+        }
+        onUpdatePrice={(name, newPrice) =>
+          updateSalePrice.mutateAsync({ name, newPrice })
+        }
+        onDelete={(name) => deleteSaleItem.mutateAsync(name)}
       />
     </div>
   );

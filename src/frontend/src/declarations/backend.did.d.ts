@@ -12,45 +12,54 @@ import type { Principal } from '@icp-sdk/core/principal';
 
 export interface CategoryItem { 'name' : string, 'defaultPrice' : number }
 export interface DailyEntry {
-  'rajajiSale' : number,
+  'morning' : ShiftEntry,
+  'evening' : ShiftEntry,
   'date' : string,
-  'expenses' : Array<Item>,
-  'purchases' : Array<Item>,
-  'saroorpurSale' : number,
-  'oldRaoSale' : number,
 }
 export interface EntryWithTotals {
-  'rajajiSale' : number,
+  'morning' : ShiftEntry,
+  'evening' : ShiftEntry,
   'totalPurchase' : number,
   'date' : string,
-  'expenses' : Array<Item>,
   'profitLoss' : number,
   'totalSale' : number,
-  'purchases' : Array<Item>,
-  'saroorpurSale' : number,
   'totalExpense' : number,
-  'oldRaoSale' : number,
 }
 export interface Item {
   'outlet' : string,
   'description' : string,
   'amount' : number,
 }
+export interface SaleItem {
+  'freeQuantity' : bigint,
+  'name' : string,
+  'quantity' : bigint,
+  'amount' : number,
+}
+export interface ShiftEntry {
+  'expenses' : Array<Item>,
+  'sales' : Array<SaleItem>,
+  'purchases' : Array<Item>,
+}
 export interface _SERVICE {
   'addExpenseCategoryWithPrice' : ActorMethod<[string, number], undefined>,
   'addPurchaseCategoryWithPrice' : ActorMethod<[string, number], undefined>,
+  'addSaleCategoryWithPrice' : ActorMethod<[string, number], undefined>,
   'deleteExpenseCategoryWithPrice' : ActorMethod<[string], undefined>,
   'deletePurchaseCategoryWithPrice' : ActorMethod<[string], undefined>,
+  'deleteSaleCategoryWithPrice' : ActorMethod<[string], undefined>,
   'getAllEntries' : ActorMethod<[], Array<DailyEntry>>,
   'getEntriesByMonth' : ActorMethod<[string, string], Array<DailyEntry>>,
   'getEntriesByYear' : ActorMethod<[string], Array<DailyEntry>>,
   'getEntryByDate' : ActorMethod<[string], [] | [EntryWithTotals]>,
   'getExpenseCategoriesWithPrice' : ActorMethod<[], Array<CategoryItem>>,
   'getPurchaseCategoriesWithPrice' : ActorMethod<[], Array<CategoryItem>>,
+  'getSaleCategoriesWithPrice' : ActorMethod<[], Array<CategoryItem>>,
   'saveEntries' : ActorMethod<[Array<DailyEntry>], undefined>,
   'saveEntry' : ActorMethod<[DailyEntry], undefined>,
   'updateExpenseCategoryPrice' : ActorMethod<[string, number], undefined>,
   'updatePurchaseCategoryPrice' : ActorMethod<[string, number], undefined>,
+  'updateSaleCategoryPrice' : ActorMethod<[string, number], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

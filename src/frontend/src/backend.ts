@@ -89,50 +89,59 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface DailyEntry {
-    rajajiSale: number;
-    date: string;
+export interface ShiftEntry {
     expenses: Array<Item>;
+    sales: Array<SaleItem>;
     purchases: Array<Item>;
-    saroorpurSale: number;
-    oldRaoSale: number;
 }
 export interface Item {
     outlet: string;
     description: string;
     amount: number;
 }
+export interface DailyEntry {
+    morning: ShiftEntry;
+    evening: ShiftEntry;
+    date: string;
+}
 export interface CategoryItem {
     name: string;
     defaultPrice: number;
 }
+export interface SaleItem {
+    freeQuantity: bigint;
+    name: string;
+    quantity: bigint;
+    amount: number;
+}
 export interface EntryWithTotals {
-    rajajiSale: number;
+    morning: ShiftEntry;
+    evening: ShiftEntry;
     totalPurchase: number;
     date: string;
-    expenses: Array<Item>;
     profitLoss: number;
     totalSale: number;
-    purchases: Array<Item>;
-    saroorpurSale: number;
     totalExpense: number;
-    oldRaoSale: number;
 }
 export interface backendInterface {
     addExpenseCategoryWithPrice(name: string, defaultPrice: number): Promise<void>;
     addPurchaseCategoryWithPrice(name: string, defaultPrice: number): Promise<void>;
+    addSaleCategoryWithPrice(name: string, defaultPrice: number): Promise<void>;
     deleteExpenseCategoryWithPrice(name: string): Promise<void>;
     deletePurchaseCategoryWithPrice(name: string): Promise<void>;
+    deleteSaleCategoryWithPrice(name: string): Promise<void>;
     getAllEntries(): Promise<Array<DailyEntry>>;
     getEntriesByMonth(year: string, month: string): Promise<Array<DailyEntry>>;
     getEntriesByYear(year: string): Promise<Array<DailyEntry>>;
     getEntryByDate(date: string): Promise<EntryWithTotals | null>;
     getExpenseCategoriesWithPrice(): Promise<Array<CategoryItem>>;
     getPurchaseCategoriesWithPrice(): Promise<Array<CategoryItem>>;
+    getSaleCategoriesWithPrice(): Promise<Array<CategoryItem>>;
     saveEntries(entryArray: Array<DailyEntry>): Promise<void>;
     saveEntry(entry: DailyEntry): Promise<void>;
     updateExpenseCategoryPrice(name: string, newPrice: number): Promise<void>;
     updatePurchaseCategoryPrice(name: string, newPrice: number): Promise<void>;
+    updateSaleCategoryPrice(name: string, newPrice: number): Promise<void>;
 }
 import type { EntryWithTotals as _EntryWithTotals } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -165,6 +174,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addSaleCategoryWithPrice(arg0: string, arg1: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addSaleCategoryWithPrice(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addSaleCategoryWithPrice(arg0, arg1);
+            return result;
+        }
+    }
     async deleteExpenseCategoryWithPrice(arg0: string): Promise<void> {
         if (this.processError) {
             try {
@@ -190,6 +213,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deletePurchaseCategoryWithPrice(arg0);
+            return result;
+        }
+    }
+    async deleteSaleCategoryWithPrice(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteSaleCategoryWithPrice(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteSaleCategoryWithPrice(arg0);
             return result;
         }
     }
@@ -277,6 +314,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getSaleCategoriesWithPrice(): Promise<Array<CategoryItem>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSaleCategoriesWithPrice();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSaleCategoriesWithPrice();
+            return result;
+        }
+    }
     async saveEntries(arg0: Array<DailyEntry>): Promise<void> {
         if (this.processError) {
             try {
@@ -330,6 +381,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updatePurchaseCategoryPrice(arg0, arg1);
+            return result;
+        }
+    }
+    async updateSaleCategoryPrice(arg0: string, arg1: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateSaleCategoryPrice(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateSaleCategoryPrice(arg0, arg1);
             return result;
         }
     }

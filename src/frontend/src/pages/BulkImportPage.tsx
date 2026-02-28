@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSaveEntries } from "../hooks/useQueries";
 import { formatINR } from "../utils/format";
@@ -11,9 +11,8 @@ import { formatINR } from "../utils/format";
 interface BulkRow {
   id: string;
   date: string;
-  rajajiSale: string;
-  oldRaoSale: string;
-  saroorpurSale: string;
+  shift: "morning" | "evening";
+  totalSale: string;
   totalPurchase: string;
   totalExpense: string;
 }
@@ -22,9 +21,8 @@ function makeEmptyRow(): BulkRow {
   return {
     id: Math.random().toString(36).slice(2),
     date: "",
-    rajajiSale: "",
-    oldRaoSale: "",
-    saroorpurSale: "",
+    shift: "morning",
+    totalSale: "",
     totalPurchase: "",
     totalExpense: "",
   };
@@ -40,26 +38,29 @@ function parseNum(v: string): number {
 }
 
 function computePL(row: BulkRow): number {
-  const sale =
-    parseNum(row.rajajiSale) +
-    parseNum(row.oldRaoSale) +
-    parseNum(row.saroorpurSale);
-  return sale - parseNum(row.totalPurchase) - parseNum(row.totalExpense);
+  return (
+    parseNum(row.totalSale) -
+    parseNum(row.totalPurchase) -
+    parseNum(row.totalExpense)
+  );
 }
 
 // ── CSV helpers ───────────────────────────────────────────
 
 const CSV_HEADERS = [
   "Date",
-  "Rajaji Sale",
-  "Old Rao Sale",
-  "Saroorpur Sale",
+  "Shift (morning/evening)",
+  "Total Sale",
   "Total Purchase",
   "Total Expense",
 ];
 
 function downloadTemplate() {
-  const content = `${CSV_HEADERS.join(",")}\n`;
+  const sampleRows = [
+    "2024-01-15,morning,5000,2000,500",
+    "2024-01-15,evening,4500,1500,300",
+  ];
+  const content = `${CSV_HEADERS.join(",")}\n${sampleRows.join("\n")}\n`;
   const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -71,7 +72,6 @@ function downloadTemplate() {
 
 function parseCSV(text: string): BulkRow[] {
   const lines = text.trim().split("\n");
-  // skip header line if present (starts with "Date")
   const dataLines = lines[0]?.trim().toLowerCase().startsWith("date")
     ? lines.slice(1)
     : lines;
@@ -79,14 +79,16 @@ function parseCSV(text: string): BulkRow[] {
   return dataLines
     .map((line) => {
       const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+      const shiftRaw = (cols[1] ?? "").toLowerCase();
+      const shift: "morning" | "evening" =
+        shiftRaw === "evening" ? "evening" : "morning";
       return {
         id: Math.random().toString(36).slice(2),
         date: cols[0] ?? "",
-        rajajiSale: cols[1] ?? "",
-        oldRaoSale: cols[2] ?? "",
-        saroorpurSale: cols[3] ?? "",
-        totalPurchase: cols[4] ?? "",
-        totalExpense: cols[5] ?? "",
+        shift,
+        totalSale: cols[2] ?? "",
+        totalPurchase: cols[3] ?? "",
+        totalExpense: cols[4] ?? "",
       };
     })
     .filter((r) => r.date.trim() !== "");
@@ -94,14 +96,11 @@ function parseCSV(text: string): BulkRow[] {
 
 // ── Component ─────────────────────────────────────────────
 
-import { useState } from "react";
-
 export function BulkImportPage() {
   const [rows, setRows] = useState<BulkRow[]>(() => makeEmptyRows(5));
   const saveEntries = useSaveEntries();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Update a single field in a row
   const updateRow = useCallback(
     (id: string, field: keyof Omit<BulkRow, "id">, value: string) => {
       setRows((prev) =>
@@ -119,7 +118,7 @@ export function BulkImportPage() {
     setRows((prev) => [...prev, ...makeEmptyRows(count)]);
   }, []);
 
-  // Keyboard: Tab on last cell of a row → first cell of next row
+  // Keyboard: Tab on last cell → next row first cell
   const handleKeyDown = useCallback(
     (
       e: React.KeyboardEvent<HTMLInputElement>,
@@ -129,14 +128,12 @@ export function BulkImportPage() {
     ) => {
       if (e.key === "Tab" && !e.shiftKey && fieldIndex === totalFields - 1) {
         e.preventDefault();
-        // Focus the date cell of the next row
         const nextRowEl = document.querySelector<HTMLInputElement>(
           `[data-row="${rowIndex + 1}"][data-field="0"]`,
         );
         if (nextRowEl) {
           nextRowEl.focus();
         } else {
-          // Add a new row and focus it after state update
           setRows((prev) => {
             const newRow = makeEmptyRow();
             setTimeout(() => {
@@ -153,7 +150,7 @@ export function BulkImportPage() {
     [],
   );
 
-  // Save all valid rows
+  // Group rows by date, merge morning and evening
   const handleSaveAll = useCallback(async () => {
     const validRows = rows.filter((r) => r.date.trim() !== "");
     if (validRows.length === 0) {
@@ -161,37 +158,65 @@ export function BulkImportPage() {
       return;
     }
 
-    const entries = validRows.map((r) => ({
-      date: r.date,
-      rajajiSale: parseNum(r.rajajiSale),
-      oldRaoSale: parseNum(r.oldRaoSale),
-      saroorpurSale: parseNum(r.saroorpurSale),
-      purchases:
-        parseNum(r.totalPurchase) > 0
-          ? [
-              {
-                description: "Bulk Import",
-                amount: parseNum(r.totalPurchase),
-                outlet: "Common",
-              },
-            ]
-          : [],
-      expenses:
-        parseNum(r.totalExpense) > 0
-          ? [
-              {
-                description: "Bulk Import",
-                amount: parseNum(r.totalExpense),
-                outlet: "Common",
-              },
-            ]
-          : [],
-    }));
+    // Group by date
+    const dateMap: Record<
+      string,
+      { morning: BulkRow | null; evening: BulkRow | null }
+    > = {};
+    for (const r of validRows) {
+      if (!dateMap[r.date]) dateMap[r.date] = { morning: null, evening: null };
+      dateMap[r.date][r.shift] = r;
+    }
+
+    const entries = Object.entries(dateMap).map(([date, shifts]) => {
+      const buildShift = (row: BulkRow | null) => {
+        if (!row) return { purchases: [], expenses: [], sales: [] };
+        return {
+          purchases:
+            parseNum(row.totalPurchase) > 0
+              ? [
+                  {
+                    description: "Bulk Import",
+                    amount: parseNum(row.totalPurchase),
+                    outlet: "Common",
+                  },
+                ]
+              : [],
+          expenses:
+            parseNum(row.totalExpense) > 0
+              ? [
+                  {
+                    description: "Bulk Import",
+                    amount: parseNum(row.totalExpense),
+                    outlet: "Common",
+                  },
+                ]
+              : [],
+          sales:
+            parseNum(row.totalSale) > 0
+              ? [
+                  {
+                    name: "Bulk Import",
+                    quantity: BigInt(1),
+                    freeQuantity: BigInt(0),
+                    amount: parseNum(row.totalSale),
+                  },
+                ]
+              : [],
+        };
+      };
+
+      return {
+        date,
+        morning: buildShift(shifts.morning),
+        evening: buildShift(shifts.evening),
+      };
+    });
 
     try {
       await saveEntries.mutateAsync(entries);
       toast.success(`${entries.length} दिन का हिसाब save हो गया! ✓`, {
-        description: `${validRows.length} entries saved successfully.`,
+        description: `${validRows.length} rows saved successfully.`,
       });
     } catch {
       toast.error("Save failed — दोबारा कोशिश करें");
@@ -212,14 +237,12 @@ export function BulkImportPage() {
           return;
         }
         setRows((prev) => {
-          // If only empty rows exist, replace them
           const hasData = prev.some((r) => r.date.trim() !== "");
           return hasData ? [...prev, ...parsed] : parsed;
         });
         toast.success(`${parsed.length} rows CSV से load हुए`);
       };
       reader.readAsText(file);
-      // Reset so the same file can be uploaded again
       e.target.value = "";
     },
     [],
@@ -227,9 +250,8 @@ export function BulkImportPage() {
 
   const FIELDS: Array<keyof Omit<BulkRow, "id">> = [
     "date",
-    "rajajiSale",
-    "oldRaoSale",
-    "saroorpurSale",
+    "shift",
+    "totalSale",
     "totalPurchase",
     "totalExpense",
   ];
@@ -240,29 +262,29 @@ export function BulkImportPage() {
       <div
         className="rounded-xl px-4 py-3.5 border"
         style={{
-          background: "oklch(0.20 0.06 50)",
-          borderColor: "oklch(0.30 0.07 50)",
+          background: "oklch(0.10 0.030 25)",
+          borderColor: "oklch(0.22 0.05 25)",
         }}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2
               className="font-display font-bold text-lg leading-tight"
-              style={{ color: "oklch(0.95 0.025 65)" }}
+              style={{ color: "oklch(0.96 0.018 72)" }}
             >
               📥 Bulk Entry
             </h2>
             <p
               className="text-xs mt-0.5 font-medium"
-              style={{ color: "oklch(0.65 0.07 60)" }}
+              style={{ color: "oklch(0.60 0.06 40)" }}
             >
-              पिछले डेटा की Bulk Entry — हर row एक दिन का हिसाब
+              पिछले डेटा की Bulk Entry — हर row एक shift का हिसाब
             </p>
             <p
               className="text-xs mt-1"
-              style={{ color: "oklch(0.55 0.05 60)" }}
+              style={{ color: "oklch(0.48 0.04 35)" }}
             >
-              Date डालें, फिर Tab से आगे बढ़ें
+              Date + Shift डालें, फिर Tab से आगे बढ़ें
             </p>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
@@ -272,8 +294,8 @@ export function BulkImportPage() {
               className="gap-1.5 text-xs h-8"
               onClick={downloadTemplate}
               style={{
-                borderColor: "oklch(0.35 0.07 50)",
-                color: "oklch(0.75 0.07 60)",
+                borderColor: "oklch(0.30 0.05 25)",
+                color: "oklch(0.70 0.06 40)",
                 background: "transparent",
               }}
             >
@@ -286,8 +308,8 @@ export function BulkImportPage() {
               className="gap-1.5 text-xs h-8"
               onClick={() => fileInputRef.current?.click()}
               style={{
-                borderColor: "oklch(0.35 0.07 50)",
-                color: "oklch(0.75 0.07 60)",
+                borderColor: "oklch(0.30 0.05 25)",
+                color: "oklch(0.70 0.06 40)",
                 background: "transparent",
               }}
             >
@@ -308,34 +330,33 @@ export function BulkImportPage() {
       {/* Table */}
       <div
         className="rounded-xl border overflow-hidden shadow-sm"
-        style={{ borderColor: "oklch(0.28 0.06 50)" }}
+        style={{ borderColor: "oklch(0.22 0.05 25)" }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr style={{ background: "oklch(0.18 0.06 50)" }}>
+              <tr style={{ background: "oklch(0.13 0.040 25)" }}>
                 <th
                   className="sticky left-0 z-10 px-2 py-2.5 text-left font-bold text-xs uppercase tracking-wider whitespace-nowrap min-w-[120px]"
                   style={{
-                    color: "oklch(0.72 0.08 60)",
-                    background: "oklch(0.18 0.06 50)",
-                    borderBottom: "1px solid oklch(0.28 0.06 50)",
-                    borderRight: "1px solid oklch(0.28 0.06 50)",
+                    color: "oklch(0.70 0.06 40)",
+                    background: "oklch(0.13 0.040 25)",
+                    borderBottom: "1px solid oklch(0.22 0.05 25)",
+                    borderRight: "1px solid oklch(0.22 0.05 25)",
                   }}
                 >
                   <span>तारीख</span>
                   <br />
                   <span
                     className="font-normal normal-case text-[10px]"
-                    style={{ color: "oklch(0.48 0.04 55)" }}
+                    style={{ color: "oklch(0.45 0.03 35)" }}
                   >
                     Date
                   </span>
                 </th>
                 {[
-                  { h: "बिक्री", s: "Rajaji" },
-                  { h: "बिक्री", s: "Old Rao" },
-                  { h: "बिक्री", s: "Saroorpur" },
+                  { h: "Shift", s: "Morning/Eve" },
+                  { h: "बिक्री", s: "Total Sale" },
                   { h: "खरीद", s: "Purchase" },
                   { h: "खर्च", s: "Expense" },
                   { h: "मुनाफा", s: "P/L (auto)" },
@@ -344,15 +365,15 @@ export function BulkImportPage() {
                     key={s}
                     className="px-2 py-2.5 text-right font-bold text-xs uppercase tracking-wider whitespace-nowrap min-w-[100px]"
                     style={{
-                      color: "oklch(0.72 0.08 60)",
-                      borderBottom: "1px solid oklch(0.28 0.06 50)",
+                      color: "oklch(0.70 0.06 40)",
+                      borderBottom: "1px solid oklch(0.22 0.05 25)",
                     }}
                   >
                     <span>{h}</span>
                     <br />
                     <span
                       className="font-normal normal-case text-[10px]"
-                      style={{ color: "oklch(0.48 0.04 55)" }}
+                      style={{ color: "oklch(0.45 0.03 35)" }}
                     >
                       {s}
                     </span>
@@ -361,8 +382,8 @@ export function BulkImportPage() {
                 <th
                   className="px-2 py-2.5 text-center font-bold text-xs uppercase tracking-wider w-9"
                   style={{
-                    color: "oklch(0.72 0.08 60)",
-                    borderBottom: "1px solid oklch(0.28 0.06 50)",
+                    color: "oklch(0.70 0.06 40)",
+                    borderBottom: "1px solid oklch(0.22 0.05 25)",
                   }}
                 >
                   ×
@@ -375,10 +396,10 @@ export function BulkImportPage() {
                 const hasDate = row.date.trim() !== "";
                 const plColor =
                   pl > 0
-                    ? "oklch(0.45 0.18 145)"
+                    ? "oklch(0.44 0.16 145)"
                     : pl < 0
-                      ? "oklch(0.52 0.22 27)"
-                      : "oklch(0.55 0.04 60)";
+                      ? "oklch(0.46 0.20 27)"
+                      : "oklch(0.50 0.04 40)";
 
                 return (
                   <tr
@@ -386,9 +407,9 @@ export function BulkImportPage() {
                     style={{
                       background:
                         rowIndex % 2 === 0
-                          ? "oklch(0.15 0.05 50)"
-                          : "oklch(0.17 0.055 50)",
-                      borderBottom: "1px solid oklch(0.24 0.05 50)",
+                          ? "oklch(0.97 0.010 70)"
+                          : "oklch(0.94 0.015 70)",
+                      borderBottom: "1px solid oklch(0.85 0.025 60)",
                     }}
                   >
                     {/* Date */}
@@ -397,9 +418,9 @@ export function BulkImportPage() {
                       style={{
                         background:
                           rowIndex % 2 === 0
-                            ? "oklch(0.15 0.05 50)"
-                            : "oklch(0.17 0.055 50)",
-                        borderRight: "1px solid oklch(0.28 0.06 50)",
+                            ? "oklch(0.97 0.010 70)"
+                            : "oklch(0.94 0.015 70)",
+                        borderRight: "1px solid oklch(0.85 0.025 60)",
                       }}
                     >
                       <input
@@ -415,55 +436,46 @@ export function BulkImportPage() {
                         data-field="0"
                         className="w-full bg-transparent border rounded px-1.5 py-1 text-xs font-medium outline-none focus:ring-1 cursor-pointer"
                         style={{
-                          color: "oklch(0.90 0.025 65)",
-                          borderColor: "oklch(0.32 0.07 50)",
-                          colorScheme: "dark",
+                          color: "oklch(0.18 0.03 25)",
+                          borderColor: "oklch(0.82 0.025 60)",
                         }}
                       />
                     </td>
 
-                    {/* Rajaji Sale */}
-                    <td className="px-1 py-1">
-                      <NumInput
-                        value={row.rajajiSale}
-                        onChange={(v) => updateRow(row.id, "rajajiSale", v)}
-                        onKeyDown={(e) =>
-                          handleKeyDown(e, rowIndex, 1, FIELDS.length)
+                    {/* Shift toggle */}
+                    <td className="px-1 py-1 text-center">
+                      <select
+                        value={row.shift}
+                        onChange={(e) =>
+                          updateRow(row.id, "shift", e.target.value)
                         }
-                        dataRow={rowIndex}
-                        dataField={1}
                         disabled={!hasDate}
-                        color="oklch(0.58 0.14 145)"
-                      />
+                        className="w-full bg-transparent border rounded px-1.5 py-1 text-xs outline-none focus:ring-1 disabled:opacity-30 cursor-pointer"
+                        style={{
+                          color:
+                            row.shift === "morning"
+                              ? "oklch(0.42 0.22 25)"
+                              : "oklch(0.45 0.18 240)",
+                          borderColor: "oklch(0.82 0.025 60)",
+                        }}
+                      >
+                        <option value="morning">🌅 Morning</option>
+                        <option value="evening">🌆 Evening</option>
+                      </select>
                     </td>
 
-                    {/* Old Rao Sale */}
+                    {/* Total Sale */}
                     <td className="px-1 py-1">
                       <NumInput
-                        value={row.oldRaoSale}
-                        onChange={(v) => updateRow(row.id, "oldRaoSale", v)}
+                        value={row.totalSale}
+                        onChange={(v) => updateRow(row.id, "totalSale", v)}
                         onKeyDown={(e) =>
                           handleKeyDown(e, rowIndex, 2, FIELDS.length)
                         }
                         dataRow={rowIndex}
                         dataField={2}
                         disabled={!hasDate}
-                        color="oklch(0.58 0.14 145)"
-                      />
-                    </td>
-
-                    {/* Saroorpur Sale */}
-                    <td className="px-1 py-1">
-                      <NumInput
-                        value={row.saroorpurSale}
-                        onChange={(v) => updateRow(row.id, "saroorpurSale", v)}
-                        onKeyDown={(e) =>
-                          handleKeyDown(e, rowIndex, 3, FIELDS.length)
-                        }
-                        dataRow={rowIndex}
-                        dataField={3}
-                        disabled={!hasDate}
-                        color="oklch(0.58 0.14 145)"
+                        color="oklch(0.44 0.16 145)"
                       />
                     </td>
 
@@ -473,12 +485,12 @@ export function BulkImportPage() {
                         value={row.totalPurchase}
                         onChange={(v) => updateRow(row.id, "totalPurchase", v)}
                         onKeyDown={(e) =>
-                          handleKeyDown(e, rowIndex, 4, FIELDS.length)
+                          handleKeyDown(e, rowIndex, 3, FIELDS.length)
                         }
                         dataRow={rowIndex}
-                        dataField={4}
+                        dataField={3}
                         disabled={!hasDate}
-                        color="oklch(0.70 0.12 27)"
+                        color="oklch(0.46 0.20 27)"
                       />
                     </td>
 
@@ -488,12 +500,12 @@ export function BulkImportPage() {
                         value={row.totalExpense}
                         onChange={(v) => updateRow(row.id, "totalExpense", v)}
                         onKeyDown={(e) =>
-                          handleKeyDown(e, rowIndex, 5, FIELDS.length)
+                          handleKeyDown(e, rowIndex, 4, FIELDS.length)
                         }
                         dataRow={rowIndex}
-                        dataField={5}
+                        dataField={4}
                         disabled={!hasDate}
-                        color="oklch(0.70 0.12 27)"
+                        color="oklch(0.46 0.20 27)"
                       />
                     </td>
 
@@ -510,7 +522,7 @@ export function BulkImportPage() {
                       ) : (
                         <span
                           className="text-xs"
-                          style={{ color: "oklch(0.38 0.04 55)" }}
+                          style={{ color: "oklch(0.60 0.03 40)" }}
                         >
                           —
                         </span>
@@ -523,7 +535,7 @@ export function BulkImportPage() {
                         type="button"
                         onClick={() => deleteRow(row.id)}
                         className="p-1 rounded opacity-40 hover:opacity-100 transition-opacity"
-                        style={{ color: "oklch(0.62 0.18 27)" }}
+                        style={{ color: "oklch(0.46 0.20 27)" }}
                         aria-label="Delete row"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -546,8 +558,8 @@ export function BulkImportPage() {
             className="gap-1.5 text-xs h-9"
             onClick={() => addRows(1)}
             style={{
-              borderColor: "oklch(0.35 0.07 50)",
-              color: "oklch(0.75 0.07 60)",
+              borderColor: "oklch(0.28 0.05 25)",
+              color: "oklch(0.65 0.06 40)",
               background: "transparent",
             }}
           >
@@ -560,8 +572,8 @@ export function BulkImportPage() {
             className="gap-1.5 text-xs h-9"
             onClick={() => addRows(10)}
             style={{
-              borderColor: "oklch(0.35 0.07 50)",
-              color: "oklch(0.75 0.07 60)",
+              borderColor: "oklch(0.28 0.05 25)",
+              color: "oklch(0.65 0.06 40)",
               background: "transparent",
             }}
           >
@@ -576,8 +588,8 @@ export function BulkImportPage() {
           onClick={handleSaveAll}
           disabled={saveEntries.isPending}
           style={{
-            background: "oklch(0.62 0.18 52)",
-            color: "oklch(0.99 0 0)",
+            background: "oklch(0.42 0.22 25)",
+            color: "oklch(0.97 0.015 72)",
           }}
         >
           {saveEntries.isPending ? (
@@ -597,7 +609,7 @@ export function BulkImportPage() {
       {/* Row count info */}
       <p
         className="text-xs text-center pb-2"
-        style={{ color: "oklch(0.45 0.04 55)" }}
+        style={{ color: "oklch(0.50 0.04 40)" }}
       >
         {rows.filter((r) => r.date.trim() !== "").length} / {rows.length} rows में
         Date भरा है
@@ -640,7 +652,7 @@ function NumInput({
       className="w-full bg-transparent border rounded px-1.5 py-1 text-xs text-right font-mono-nums outline-none focus:ring-1 disabled:opacity-30 disabled:cursor-not-allowed"
       style={{
         color,
-        borderColor: "oklch(0.28 0.06 50)",
+        borderColor: "oklch(0.82 0.025 60)",
         caretColor: color,
       }}
     />

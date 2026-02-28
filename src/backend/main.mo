@@ -16,22 +16,29 @@ actor {
     outlet : Text;
   };
 
-  type DailyEntry = {
-    date : Text;
+  type SaleItem = {
+    name : Text;
+    quantity : Nat;
+    freeQuantity : Nat;
+    amount : Float;
+  };
+
+  type ShiftEntry = {
     purchases : [Item];
     expenses : [Item];
-    rajajiSale : Float;
-    oldRaoSale : Float;
-    saroorpurSale : Float;
+    sales : [SaleItem];
+  };
+
+  type DailyEntry = {
+    date : Text;
+    morning : ShiftEntry;
+    evening : ShiftEntry;
   };
 
   type EntryWithTotals = {
     date : Text;
-    purchases : [Item];
-    expenses : [Item];
-    rajajiSale : Float;
-    oldRaoSale : Float;
-    saroorpurSale : Float;
+    morning : ShiftEntry;
+    evening : ShiftEntry;
     totalPurchase : Float;
     totalExpense : Float;
     totalSale : Float;
@@ -54,20 +61,30 @@ actor {
     { name = "Maintenance"; defaultPrice = 0.0 },
     { name = "Other"; defaultPrice = 0.0 },
   ]);
+  let saleCategories : List.List<CategoryItem> = List.fromArray<CategoryItem>([
+    { name = "Water Bottle"; defaultPrice = 30.0 },
+    { name = "Cold-Drink"; defaultPrice = 40.0 },
+  ]);
 
   func calculateTotals(entry : DailyEntry) : EntryWithTotals {
-    let totalPurchase = entry.purchases.foldLeft(0.0, func(acc, item) { acc + item.amount });
-    let totalExpense = entry.expenses.foldLeft(0.0, func(acc, item) { acc + item.amount });
-    let totalSale = entry.rajajiSale + entry.oldRaoSale + entry.saroorpurSale;
+    let morningPurchase = entry.morning.purchases.foldLeft(0.0, func(acc, item) { acc + item.amount });
+    let eveningPurchase = entry.evening.purchases.foldLeft(0.0, func(acc, item) { acc + item.amount });
+    let totalPurchase = morningPurchase + eveningPurchase;
+
+    let morningExpense = entry.morning.expenses.foldLeft(0.0, func(acc, item) { acc + item.amount });
+    let eveningExpense = entry.evening.expenses.foldLeft(0.0, func(acc, item) { acc + item.amount });
+    let totalExpense = morningExpense + eveningExpense;
+
+    let morningSale = entry.morning.sales.foldLeft(0.0, func(acc, item) { acc + item.amount });
+    let eveningSale = entry.evening.sales.foldLeft(0.0, func(acc, item) { acc + item.amount });
+    let totalSale = morningSale + eveningSale;
+
     let profitLoss = totalSale - (totalPurchase + totalExpense);
 
     {
       date = entry.date;
-      purchases = entry.purchases;
-      expenses = entry.expenses;
-      rajajiSale = entry.rajajiSale;
-      oldRaoSale = entry.oldRaoSale;
-      saroorpurSale = entry.saroorpurSale;
+      morning = entry.morning;
+      evening = entry.evening;
       totalPurchase;
       totalExpense;
       totalSale;
@@ -114,6 +131,10 @@ actor {
     expenseCategories.toArray();
   };
 
+  public query ({ caller }) func getSaleCategoriesWithPrice() : async [CategoryItem] {
+    saleCategories.toArray();
+  };
+
   public shared ({ caller }) func addPurchaseCategoryWithPrice(name : Text, defaultPrice : Float) : async () {
     if (purchaseCategories.any(func(cat) { Text.equal(cat.name, name) })) {
       Runtime.trap("Category already exists");
@@ -126,6 +147,13 @@ actor {
       Runtime.trap("Category already exists");
     };
     expenseCategories.add({ name; defaultPrice });
+  };
+
+  public shared ({ caller }) func addSaleCategoryWithPrice(name : Text, defaultPrice : Float) : async () {
+    if (saleCategories.any(func(cat) { Text.equal(cat.name, name) })) {
+      Runtime.trap("Category already exists");
+    };
+    saleCategories.add({ name; defaultPrice });
   };
 
   public shared ({ caller }) func updatePurchaseCategoryPrice(name : Text, newPrice : Float) : async () {
@@ -158,6 +186,21 @@ actor {
     expenseCategories.addAll(updatedArray.values());
   };
 
+  public shared ({ caller }) func updateSaleCategoryPrice(name : Text, newPrice : Float) : async () {
+    let updatedList = saleCategories.map<CategoryItem, CategoryItem>(
+      func(cat) {
+        if (Text.equal(cat.name, name)) {
+          { cat with defaultPrice = newPrice };
+        } else {
+          cat;
+        };
+      }
+    );
+    saleCategories.clear();
+    let updatedArray = updatedList.toArray();
+    saleCategories.addAll(updatedArray.values());
+  };
+
   public shared ({ caller }) func deletePurchaseCategoryWithPrice(name : Text) : async () {
     let filtered = purchaseCategories.filter(func(cat) { not Text.equal(cat.name, name) });
     purchaseCategories.clear();
@@ -171,5 +214,11 @@ actor {
     let filteredArray = filtered.toArray();
     expenseCategories.addAll(filteredArray.values());
   };
-};
 
+  public shared ({ caller }) func deleteSaleCategoryWithPrice(name : Text) : async () {
+    let filtered = saleCategories.filter(func(cat) { not Text.equal(cat.name, name) });
+    saleCategories.clear();
+    let filteredArray = filtered.toArray();
+    saleCategories.addAll(filteredArray.values());
+  };
+};

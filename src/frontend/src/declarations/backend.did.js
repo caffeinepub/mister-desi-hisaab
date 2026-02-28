@@ -13,25 +13,30 @@ export const Item = IDL.Record({
   'description' : IDL.Text,
   'amount' : IDL.Float64,
 });
-export const DailyEntry = IDL.Record({
-  'rajajiSale' : IDL.Float64,
-  'date' : IDL.Text,
+export const SaleItem = IDL.Record({
+  'freeQuantity' : IDL.Nat,
+  'name' : IDL.Text,
+  'quantity' : IDL.Nat,
+  'amount' : IDL.Float64,
+});
+export const ShiftEntry = IDL.Record({
   'expenses' : IDL.Vec(Item),
+  'sales' : IDL.Vec(SaleItem),
   'purchases' : IDL.Vec(Item),
-  'saroorpurSale' : IDL.Float64,
-  'oldRaoSale' : IDL.Float64,
+});
+export const DailyEntry = IDL.Record({
+  'morning' : ShiftEntry,
+  'evening' : ShiftEntry,
+  'date' : IDL.Text,
 });
 export const EntryWithTotals = IDL.Record({
-  'rajajiSale' : IDL.Float64,
+  'morning' : ShiftEntry,
+  'evening' : ShiftEntry,
   'totalPurchase' : IDL.Float64,
   'date' : IDL.Text,
-  'expenses' : IDL.Vec(Item),
   'profitLoss' : IDL.Float64,
   'totalSale' : IDL.Float64,
-  'purchases' : IDL.Vec(Item),
-  'saroorpurSale' : IDL.Float64,
   'totalExpense' : IDL.Float64,
-  'oldRaoSale' : IDL.Float64,
 });
 export const CategoryItem = IDL.Record({
   'name' : IDL.Text,
@@ -41,8 +46,10 @@ export const CategoryItem = IDL.Record({
 export const idlService = IDL.Service({
   'addExpenseCategoryWithPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
   'addPurchaseCategoryWithPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
+  'addSaleCategoryWithPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
   'deleteExpenseCategoryWithPrice' : IDL.Func([IDL.Text], [], []),
   'deletePurchaseCategoryWithPrice' : IDL.Func([IDL.Text], [], []),
+  'deleteSaleCategoryWithPrice' : IDL.Func([IDL.Text], [], []),
   'getAllEntries' : IDL.Func([], [IDL.Vec(DailyEntry)], ['query']),
   'getEntriesByMonth' : IDL.Func(
       [IDL.Text, IDL.Text],
@@ -65,10 +72,16 @@ export const idlService = IDL.Service({
       [IDL.Vec(CategoryItem)],
       ['query'],
     ),
+  'getSaleCategoriesWithPrice' : IDL.Func(
+      [],
+      [IDL.Vec(CategoryItem)],
+      ['query'],
+    ),
   'saveEntries' : IDL.Func([IDL.Vec(DailyEntry)], [], []),
   'saveEntry' : IDL.Func([DailyEntry], [], []),
   'updateExpenseCategoryPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
   'updatePurchaseCategoryPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
+  'updateSaleCategoryPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
 });
 
 export const idlInitArgs = [];
@@ -79,25 +92,30 @@ export const idlFactory = ({ IDL }) => {
     'description' : IDL.Text,
     'amount' : IDL.Float64,
   });
-  const DailyEntry = IDL.Record({
-    'rajajiSale' : IDL.Float64,
-    'date' : IDL.Text,
+  const SaleItem = IDL.Record({
+    'freeQuantity' : IDL.Nat,
+    'name' : IDL.Text,
+    'quantity' : IDL.Nat,
+    'amount' : IDL.Float64,
+  });
+  const ShiftEntry = IDL.Record({
     'expenses' : IDL.Vec(Item),
+    'sales' : IDL.Vec(SaleItem),
     'purchases' : IDL.Vec(Item),
-    'saroorpurSale' : IDL.Float64,
-    'oldRaoSale' : IDL.Float64,
+  });
+  const DailyEntry = IDL.Record({
+    'morning' : ShiftEntry,
+    'evening' : ShiftEntry,
+    'date' : IDL.Text,
   });
   const EntryWithTotals = IDL.Record({
-    'rajajiSale' : IDL.Float64,
+    'morning' : ShiftEntry,
+    'evening' : ShiftEntry,
     'totalPurchase' : IDL.Float64,
     'date' : IDL.Text,
-    'expenses' : IDL.Vec(Item),
     'profitLoss' : IDL.Float64,
     'totalSale' : IDL.Float64,
-    'purchases' : IDL.Vec(Item),
-    'saroorpurSale' : IDL.Float64,
     'totalExpense' : IDL.Float64,
-    'oldRaoSale' : IDL.Float64,
   });
   const CategoryItem = IDL.Record({
     'name' : IDL.Text,
@@ -107,8 +125,10 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     'addExpenseCategoryWithPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
     'addPurchaseCategoryWithPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
+    'addSaleCategoryWithPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
     'deleteExpenseCategoryWithPrice' : IDL.Func([IDL.Text], [], []),
     'deletePurchaseCategoryWithPrice' : IDL.Func([IDL.Text], [], []),
+    'deleteSaleCategoryWithPrice' : IDL.Func([IDL.Text], [], []),
     'getAllEntries' : IDL.Func([], [IDL.Vec(DailyEntry)], ['query']),
     'getEntriesByMonth' : IDL.Func(
         [IDL.Text, IDL.Text],
@@ -131,10 +151,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(CategoryItem)],
         ['query'],
       ),
+    'getSaleCategoriesWithPrice' : IDL.Func(
+        [],
+        [IDL.Vec(CategoryItem)],
+        ['query'],
+      ),
     'saveEntries' : IDL.Func([IDL.Vec(DailyEntry)], [], []),
     'saveEntry' : IDL.Func([DailyEntry], [], []),
     'updateExpenseCategoryPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
     'updatePurchaseCategoryPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
+    'updateSaleCategoryPrice' : IDL.Func([IDL.Text, IDL.Float64], [], []),
   });
 };
 

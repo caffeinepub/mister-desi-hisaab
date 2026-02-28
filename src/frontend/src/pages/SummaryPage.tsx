@@ -19,7 +19,7 @@ import {
 import { CalendarIcon, TrendingDown, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DailyEntry } from "../backend.d.ts";
+import type { DailyEntry, SaleItem } from "../backend.d.ts";
 import { SummaryCard } from "../components/SummaryCard";
 import {
   useEntriesByMonth,
@@ -41,13 +41,33 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => ({
 
 const YEARS = getYearRange();
 
-// Compute totals from a DailyEntry
+// Compute totals from a DailyEntry (morning + evening combined)
 function computeTotals(entry: DailyEntry) {
-  const totalPurchase = entry.purchases.reduce((s, i) => s + i.amount, 0);
-  const totalExpense = entry.expenses.reduce((s, i) => s + i.amount, 0);
-  const totalSale = entry.rajajiSale + entry.oldRaoSale + entry.saroorpurSale;
+  const allPurchases = [
+    ...(entry.morning?.purchases ?? []),
+    ...(entry.evening?.purchases ?? []),
+  ];
+  const allExpenses = [
+    ...(entry.morning?.expenses ?? []),
+    ...(entry.evening?.expenses ?? []),
+  ];
+  const allSales = [
+    ...(entry.morning?.sales ?? []),
+    ...(entry.evening?.sales ?? []),
+  ];
+  const totalPurchase = allPurchases.reduce((s, i) => s + i.amount, 0);
+  const totalExpense = allExpenses.reduce((s, i) => s + i.amount, 0);
+  const totalSale = allSales.reduce((s, i) => s + i.amount, 0);
   const profitLoss = totalSale - totalPurchase - totalExpense;
-  return { totalPurchase, totalExpense, totalSale, profitLoss };
+  return {
+    totalPurchase,
+    totalExpense,
+    totalSale,
+    profitLoss,
+    allPurchases,
+    allExpenses,
+    allSales,
+  };
 }
 
 // PL badge — pill with background for clear at-a-glance reading
@@ -100,11 +120,37 @@ function DaySummary() {
       }
     : null;
 
+  // Combined sale items from both shifts
+  const allSaleItems = entry
+    ? [...(entry.morning?.sales ?? []), ...(entry.evening?.sales ?? [])]
+    : [];
+
+  const morningHasData =
+    entry &&
+    ((entry.morning?.purchases ?? []).length > 0 ||
+      (entry.morning?.expenses ?? []).length > 0 ||
+      (entry.morning?.sales ?? []).length > 0);
+
+  const eveningHasData =
+    entry &&
+    ((entry.evening?.purchases ?? []).length > 0 ||
+      (entry.evening?.expenses ?? []).length > 0 ||
+      (entry.evening?.sales ?? []).length > 0);
+
   return (
     <div className="space-y-5 pt-4">
       {/* Date Picker */}
-      <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 shadow-xs">
-        <CalendarIcon className="h-5 w-5 text-primary shrink-0" />
+      <div
+        className="flex items-center gap-3 border rounded-xl px-4 py-3 shadow-xs"
+        style={{
+          background: "oklch(0.98 0.010 70)",
+          borderColor: "oklch(0.85 0.025 60)",
+        }}
+      >
+        <CalendarIcon
+          className="h-5 w-5 shrink-0"
+          style={{ color: "oklch(0.42 0.22 25)" }}
+        />
         <div>
           <Label className="text-xs text-muted-foreground mb-1 block">
             Select Date
@@ -132,28 +178,93 @@ function DaySummary() {
           animate={{ opacity: 1 }}
           className="space-y-5"
         >
+          {/* Overall Summary Card */}
           <SummaryCard
             totalPurchase={totals!.totalPurchase}
             totalExpense={totals!.totalExpense}
             totalSale={totals!.totalSale}
-            rajajiSale={entry.rajajiSale}
-            oldRaoSale={entry.oldRaoSale}
-            saroorpurSale={entry.saroorpurSale}
             profitLoss={totals!.profitLoss}
+            saleItems={allSaleItems}
           />
 
-          {/* Purchases Table */}
-          {entry.purchases.length > 0 && (
-            <ItemsTable title="Purchases (खरीदारी)" items={entry.purchases} />
+          {/* Morning Shift Block */}
+          {morningHasData && (
+            <div className="space-y-3">
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                style={{
+                  background: "oklch(0.42 0.22 25 / 0.08)",
+                  borderLeft: "3px solid oklch(0.42 0.22 25)",
+                }}
+              >
+                <span className="text-base">🌅</span>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: "oklch(0.42 0.22 25)" }}
+                >
+                  Morning Shift — सुबह
+                </span>
+              </div>
+              {(entry.morning?.purchases ?? []).length > 0 && (
+                <ItemsTable
+                  title="Purchases (खरीदारी)"
+                  items={entry.morning.purchases}
+                />
+              )}
+              {(entry.morning?.expenses ?? []).length > 0 && (
+                <ItemsTable
+                  title="Expenses (खर्च)"
+                  items={entry.morning.expenses}
+                  isExpense
+                />
+              )}
+              {(entry.morning?.sales ?? []).length > 0 && (
+                <SaleItemsTable
+                  title="Sale Items (बिक्री)"
+                  items={entry.morning.sales}
+                />
+              )}
+            </div>
           )}
 
-          {/* Expenses Table */}
-          {entry.expenses.length > 0 && (
-            <ItemsTable
-              title="Expenses (खर्च)"
-              items={entry.expenses}
-              isExpense
-            />
+          {/* Evening Shift Block */}
+          {eveningHasData && (
+            <div className="space-y-3">
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                style={{
+                  background: "oklch(0.35 0.14 240 / 0.08)",
+                  borderLeft: "3px solid oklch(0.45 0.18 240)",
+                }}
+              >
+                <span className="text-base">🌆</span>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: "oklch(0.45 0.18 240)" }}
+                >
+                  Evening Shift — शाम
+                </span>
+              </div>
+              {(entry.evening?.purchases ?? []).length > 0 && (
+                <ItemsTable
+                  title="Purchases (खरीदारी)"
+                  items={entry.evening.purchases}
+                />
+              )}
+              {(entry.evening?.expenses ?? []).length > 0 && (
+                <ItemsTable
+                  title="Expenses (खर्च)"
+                  items={entry.evening.expenses}
+                  isExpense
+                />
+              )}
+              {(entry.evening?.sales ?? []).length > 0 && (
+                <SaleItemsTable
+                  title="Sale Items (बिक्री)"
+                  items={entry.evening.sales}
+                />
+              )}
+            </div>
           )}
         </motion.div>
       )}
@@ -253,6 +364,103 @@ function OutletBreakdown({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function SaleItemsTable({
+  title,
+  items,
+}: {
+  title: string;
+  items: SaleItem[];
+}) {
+  const total = items.reduce((s, i) => s + i.amount, 0);
+  return (
+    <div
+      className="rounded-lg border overflow-hidden shadow-xs"
+      style={{ borderColor: "oklch(0.78 0.09 145 / 0.40)" }}
+    >
+      <div
+        className="px-4 py-2.5 border-b flex items-center justify-between"
+        style={{
+          background: "oklch(0.92 0.06 145 / 0.15)",
+          borderColor: "oklch(0.78 0.09 145 / 0.30)",
+        }}
+      >
+        <h4
+          className="text-xs font-bold uppercase tracking-[0.12em]"
+          style={{ color: "oklch(0.40 0.14 145)" }}
+        >
+          {title}
+        </h4>
+        <span
+          className="font-mono-nums font-bold text-sm"
+          style={{ color: "oklch(0.40 0.14 145)" }}
+        >
+          {formatINR(total)}
+        </span>
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow style={{ background: "oklch(0.96 0.010 70)" }}>
+            <TableHead
+              className="text-xs font-bold uppercase tracking-wide"
+              style={{ color: "oklch(0.40 0.04 40)" }}
+            >
+              Item
+            </TableHead>
+            <TableHead
+              className="text-right text-xs font-bold uppercase tracking-wide"
+              style={{ color: "oklch(0.40 0.04 40)" }}
+            >
+              Qty
+            </TableHead>
+            <TableHead
+              className="text-right text-xs font-bold uppercase tracking-wide"
+              style={{ color: "oklch(0.40 0.04 40)" }}
+            >
+              Free
+            </TableHead>
+            <TableHead
+              className="text-right text-xs font-bold uppercase tracking-wide"
+              style={{ color: "oklch(0.40 0.04 40)" }}
+            >
+              Amount
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: items don't have stable IDs from backend
+            <TableRow key={i} className="ledger-row">
+              <TableCell className="font-medium text-sm">
+                {item.name || "—"}
+              </TableCell>
+              <TableCell
+                className="text-right font-mono-nums text-sm"
+                style={{ color: "oklch(0.40 0.04 40)" }}
+              >
+                {Number(item.quantity)}
+              </TableCell>
+              <TableCell
+                className="text-right font-mono-nums text-sm"
+                style={{ color: "oklch(0.44 0.14 145)" }}
+              >
+                {Number(item.freeQuantity) > 0
+                  ? `+${Number(item.freeQuantity)}`
+                  : "—"}
+              </TableCell>
+              <TableCell
+                className="text-right font-mono-nums text-sm"
+                style={{ color: "oklch(0.40 0.14 145)" }}
+              >
+                {formatINR(item.amount)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
