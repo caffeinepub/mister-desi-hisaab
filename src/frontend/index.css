@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Fonts ─────────────────────────────────────────────── */
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Design Tokens ─────────────────────────────────────── */
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* Indian Saffron / Turmeric palette — warm, trustworthy */
+    --background: 0.97 0.012 65;
+    --foreground: 0.18 0.04 50;
+
+    --card: 0.99 0.006 60;
+    --card-foreground: 0.18 0.04 50;
+
+    --popover: 0.99 0.006 60;
+    --popover-foreground: 0.18 0.04 50;
+
+    /* Saffron primary */
+    --primary: 0.62 0.18 52;
+    --primary-foreground: 0.99 0 0;
+
+    /* Warm secondary */
+    --secondary: 0.92 0.035 65;
+    --secondary-foreground: 0.25 0.06 50;
+
+    --muted: 0.92 0.02 65;
+    --muted-foreground: 0.52 0.04 55;
+
+    /* Turmeric accent */
+    --accent: 0.88 0.12 75;
+    --accent-foreground: 0.18 0.06 45;
+
+    --destructive: 0.58 0.22 27;
+    --destructive-foreground: 0.99 0 0;
+
+    --border: 0.86 0.04 65;
+    --input: 0.86 0.04 65;
+    --ring: 0.62 0.18 52;
+
+    /* Profit/Loss colors */
+    --profit: 0.58 0.18 145;
+    --profit-bg: 0.95 0.06 145;
+    --loss: 0.52 0.22 27;
+    --loss-bg: 0.97 0.05 27;
+
+    /* Chart colors */
+    --chart-1: 0.62 0.18 52;
+    --chart-2: 0.55 0.16 145;
+    --chart-3: 0.52 0.22 27;
+    --chart-4: 0.65 0.14 230;
+    --chart-5: 0.7 0.16 80;
+
+    /* Sidebar */
+    --sidebar: 0.18 0.06 50;
+    --sidebar-foreground: 0.92 0.02 65;
+    --sidebar-primary: 0.62 0.18 52;
+    --sidebar-primary-foreground: 0.99 0 0;
+    --sidebar-accent: 0.28 0.08 50;
+    --sidebar-accent-foreground: 0.92 0.02 65;
+    --sidebar-border: 0.3 0.06 50;
+    --sidebar-ring: 0.62 0.18 52;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* ── Custom utilities ───────────────────────────────────── */
+@layer utilities {
+  .font-display {
+    font-family: "Fraunces", serif;
+  }
+  .font-mono-nums {
+    font-family: "Geist Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .profit-text {
+    color: oklch(var(--profit));
+  }
+  .loss-text {
+    color: oklch(var(--loss));
+  }
+  .profit-bg {
+    background-color: oklch(var(--profit-bg));
+  }
+  .loss-bg {
+    background-color: oklch(var(--loss-bg));
+  }
+
+  /* Ledger stripe effect for tables */
+  .ledger-row:nth-child(even) {
+    background-color: oklch(var(--muted) / 0.5);
+  }
+
+  /* Decorative Indian border pattern */
+  .border-decorative {
+    border-image: repeating-linear-gradient(
+        90deg,
+        oklch(var(--primary)) 0px,
+        oklch(var(--primary)) 6px,
+        oklch(var(--accent)) 6px,
+        oklch(var(--accent)) 10px
+      )
+      1;
+  }
+}
